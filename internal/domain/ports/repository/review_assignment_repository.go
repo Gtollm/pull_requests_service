@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+
 	"pull-request-review/internal/domain/model"
 )
 
@@ -14,4 +15,5 @@ type ReviewAssignmentRepository interface {
 	ReplaceReviewer(
 		ctx context.Context, pullRequestID model.PullRequestID, oldReviewerID model.UserID, newReviewerID model.UserID,
 	) error
+	GetAssignmentCounts(ctx context.Context) (map[string]int, error)
 }
