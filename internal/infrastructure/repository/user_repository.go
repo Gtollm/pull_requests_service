@@ -1,21 +1,21 @@
-package postrgres
+package repository
 
 import (
 	"context"
 	"errors"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"pull-request-review/internal/domain/model"
 	"pull-request-review/internal/domain/ports/repository"
 	"pull-request-review/internal/domain/rules"
+	"pull-request-review/internal/infrastructure/database"
 )
 
 type UserRepositoryPgx struct {
-	pool *pgxpool.Pool
+	database database.Database
 }
 
-func NewUserRepository(pool *pgxpool.Pool) repository.UserRepository {
-	return &UserRepositoryPgx{pool: pool}
+func NewUserRepository(database database.Database) repository.UserRepository {
+	return &UserRepositoryPgx{database: database}
 }
 
 func (r *UserRepositoryPgx) Insert(ctx context.Context, user *model.User) error {
@@ -24,7 +24,7 @@ VALUES ($1, $2, $3, $4, $5, $6)
 ON CONFLICT (user_id) DO NOTHING 
 `
 
-	_, err := r.pool.Exec(
+	_, err := r.database.GetPool().Exec(
 		ctx, query,
 		user.ID,
 		user.Username,
@@ -47,7 +47,7 @@ SET username = $1, team_id = $2, is_active = $3, updated_at = $4
 WHERE user_id = $5
 `
 
-	result, err := r.pool.Exec(
+	result, err := r.database.GetPool().Exec(
 		ctx, query,
 		user.Username,
 		user.TeamID,
@@ -67,13 +67,40 @@ WHERE user_id = $5
 	return nil
 }
 
+func (r *UserRepositoryPgx) Upsert(ctx context.Context, user *model.User) error {
+	query := `INSERT INTO users (user_id, username, team_id, is_active, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6)
+ON CONFLICT (user_id) DO UPDATE 
+SET username = EXCLUDED.username, 
+    team_id = EXCLUDED.team_id, 
+    is_active = EXCLUDED.is_active, 
+    updated_at = EXCLUDED.updated_at
+`
+
+	_, err := r.database.GetPool().Exec(
+		ctx, query,
+		user.ID,
+		user.Username,
+		user.TeamID,
+		user.IsActive,
+		user.CreatedAt,
+		user.UpdatedAt,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *UserRepositoryPgx) UpdateActivity(ctx context.Context, ID model.UserID, isActive bool) error {
 	query := `
 UPDATE users
 SET is_active = $1, updated_at = now()
 WHERE user_id = $2`
 
-	result, err := r.pool.Exec(ctx, query, isActive, ID)
+	result, err := r.database.GetPool().Exec(ctx, query, isActive, ID)
 	if err != nil {
 		return err
 	}
@@ -91,7 +118,7 @@ SELECT user_id, username, team_id, is_active, created_at, updated_at FROM users 
 `
 	var user model.User
 
-	err := r.pool.QueryRow(ctx, query, ID).Scan(
+	err := r.database.GetPool().QueryRow(ctx, query, ID).Scan(
 		&user.ID,
 		&user.Username,
 		&user.TeamID,
@@ -114,7 +141,7 @@ func (r *UserRepositoryPgx) GetByTeam(ctx context.Context, teamID model.TeamID) 
 SELECT user_id, username, team_id, is_active, created_at, updated_at FROM users WHERE team_id = $1
 `
 
-	rows, err := r.pool.Query(ctx, query, teamID)
+	rows, err := r.database.GetPool().Query(ctx, query, teamID)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +179,7 @@ WHERE user_id = $1)
 `
 
 	var exists bool
-	err := r.pool.QueryRow(ctx, query, ID).Scan(&exists)
+	err := r.database.GetPool().QueryRow(ctx, query, ID).Scan(&exists)
 	if err != nil {
 		return false, err
 	}
@@ -166,7 +193,7 @@ func (r *UserRepositoryPgx) GetActiveByTeamExcluding(
 SELECT user_id, username, team_id, is_active, created_at, updated_at FROM users WHERE team_id = $1 AND is_active = true AND user_id != ALL($2)
 `
 
-	rows, err := r.pool.Query(ctx, query, teamID, excludedUserIDs)
+	rows, err := r.database.GetPool().Query(ctx, query, teamID, excludedUserIDs)
 	if err != nil {
 		return nil, err
 	}

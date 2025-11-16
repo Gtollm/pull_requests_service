@@ -1,21 +1,22 @@
-package postrgres
+package repository
 
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/google/uuid"
 	"pull-request-review/internal/domain/model"
 	"pull-request-review/internal/domain/ports/repository"
 	"pull-request-review/internal/domain/rules"
+	"pull-request-review/internal/infrastructure/database"
 	"time"
 )
 
 type ReviewAssignmentRepository struct {
-	pool *pgxpool.Pool
+	database database.Database
 }
 
-func NewReviewAssignmentRepository(pool *pgxpool.Pool) repository.ReviewAssignmentRepository {
-	return &ReviewAssignmentRepository{pool: pool}
+func NewReviewAssignmentRepository(database database.Database) repository.ReviewAssignmentRepository {
+	return &ReviewAssignmentRepository{database: database}
 }
 
 func (r *ReviewAssignmentRepository) AssignReviewer(
@@ -31,7 +32,7 @@ func (r *ReviewAssignmentRepository) AssignReviewers(
 		return nil
 	}
 
-	tx, err := r.pool.Begin(ctx)
+	tx, err := r.database.GetPool().Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -71,7 +72,7 @@ func (r *ReviewAssignmentRepository) GetByReviewer(
 SELECT pull_request_id, user_id, assigned_at FROM review_assignments
 WHERE user_id = $1`
 
-	rows, err := r.pool.Query(ctx, query, pullRequestID)
+	rows, err := r.database.GetPool().Query(ctx, query, pullRequestID)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +102,7 @@ func (r *ReviewAssignmentRepository) Exists(
 SELECT EXISTS (SELECT 1 FROM review_assignments WHERE pull_request_id = $1 AND user_id = $2)
 `
 	var exists bool
-	err := r.pool.QueryRow(ctx, query, pullRequestID, reviewerID).Scan(&exists)
+	err := r.database.GetPool().QueryRow(ctx, query, pullRequestID, reviewerID).Scan(&exists)
 	if err != nil {
 		return false, err
 	}
@@ -112,9 +113,11 @@ func (r *ReviewAssignmentRepository) GetReviewers(ctx context.Context, pullReque
 	[]model.User, error,
 ) {
 	query := `
-SELECT pull_request_id, user_id, assigned_at FROM review_assignments
-WHERE pull_request_id = $1`
-	rows, err := r.pool.Query(ctx, query, pullRequestID)
+SELECT u.user_id, u.username, u.team_id, u.is_active, u.created_at, u.updated_at 
+FROM users u 
+INNER JOIN review_assignments ra ON u.user_id = ra.user_id 
+WHERE ra.pull_request_id = $1`
+	rows, err := r.database.GetPool().Query(ctx, query, pullRequestID)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +125,7 @@ WHERE pull_request_id = $1`
 	var users []model.User
 	for rows.Next() {
 		var user model.User
-		err := rows.Scan(&user)
+		err := rows.Scan(&user.ID, &user.Username, &user.TeamID, &user.IsActive, &user.CreatedAt, &user.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -138,7 +141,7 @@ WHERE pull_request_id = $1`
 func (r *ReviewAssignmentRepository) ReplaceReviewer(
 	ctx context.Context, pullRequestID model.PullRequestID, oldReviewerID model.UserID, newReviewerID model.UserID,
 ) error {
-	tx, err := r.pool.Begin(ctx)
+	tx, err := r.database.GetPool().Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -178,5 +181,36 @@ VALUES ($1, $2, $3)
 		return err
 	}
 
-	return tx.Commit(ctx)
+	return nil
+}
+
+func (r *ReviewAssignmentRepository) GetAssignmentCounts(ctx context.Context) (map[string]int, error) {
+	query := `
+SELECT user_id, COUNT(*) as count
+FROM review_assignments
+GROUP BY user_id
+	`
+
+	rows, err := r.database.GetPool().Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	counts := make(map[string]int)
+	for rows.Next() {
+		var userID model.UserID
+		var count int
+		err := rows.Scan(&userID, &count)
+		if err != nil {
+			return nil, err
+		}
+		counts[uuid.UUID(userID).String()] = count
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return counts, nil
 }

@@ -1,22 +1,22 @@
-package postrgres
+package repository
 
 import (
 	"context"
 	"errors"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"pull-request-review/internal/domain/model"
 	"pull-request-review/internal/domain/ports/repository"
 	"pull-request-review/internal/domain/rules"
+	"pull-request-review/internal/infrastructure/database"
 	"time"
 )
 
 type PullRequestRepositoryPgx struct {
-	pool *pgxpool.Pool
+	database database.Database
 }
 
-func NewPullRequestRepositoryPgx(pool *pgxpool.Pool) repository.PullRequestRepository {
-	return &PullRequestRepositoryPgx{pool: pool}
+func NewPullRequestRepositoryPgx(database database.Database) repository.PullRequestRepository {
+	return &PullRequestRepositoryPgx{database: database}
 }
 
 func (r *PullRequestRepositoryPgx) Create(ctx context.Context, pullRequest *model.PullRequest) error {
@@ -25,7 +25,7 @@ INSERT INTO pull_requests (pull_request_id, name, author_id, status, created_at,
 VALUES ($1, $2, $3, $4, $5, $6)
 ON CONFLICT DO NOTHING;
 `
-	_, err := r.pool.Exec(
+	_, err := r.database.GetPool().Exec(
 		ctx, query,
 		pullRequest.PullRequestID,
 		pullRequest.Name,
@@ -48,7 +48,7 @@ WHERE pull_request_id = $1
 	`
 
 	var pr model.PullRequest
-	err := r.pool.QueryRow(ctx, query, ID).Scan(
+	err := r.database.GetPool().QueryRow(ctx, query, ID).Scan(
 		&pr.PullRequestID,
 		&pr.Name,
 		&pr.AuthorID,
@@ -72,7 +72,7 @@ func (r *PullRequestRepositoryPgx) Exists(ctx context.Context, ID model.PullRequ
 SELECT EXISTS (SELECT 1 FROM pull_requests WHERE pull_request_id = $1)
 `
 	var exists bool
-	err := r.pool.QueryRow(ctx, query, ID).Scan(&exists)
+	err := r.database.GetPool().QueryRow(ctx, query, ID).Scan(&exists)
 	if err != nil {
 		return false, err
 	}
@@ -89,7 +89,7 @@ SET status = $1, merged_at = $2
 WHERE pull_request_id = $3
 	`
 
-	result, err := r.pool.Exec(ctx, query, status, mergedAt, ID)
+	result, err := r.database.GetPool().Exec(ctx, query, status, mergedAt, ID)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ INNER JOIN review_assignments ra ON p.pull_request_id = ra.pull_request_id
 WHERE ra.user_id = $1
 `
 
-	rows, err := r.pool.Query(ctx, query, ID)
+	rows, err := r.database.GetPool().Query(ctx, query, ID)
 	if err != nil {
 		return nil, err
 	}
@@ -138,4 +138,35 @@ WHERE ra.user_id = $1
 	}
 
 	return pullRequests, nil
+}
+
+func (r *PullRequestRepositoryPgx) GetPullRequestCountsByStatus(ctx context.Context) (map[string]int, error) {
+	query := `
+SELECT status, COUNT(*) as count
+FROM pull_requests
+GROUP BY status
+	`
+
+	rows, err := r.database.GetPool().Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	counts := make(map[string]int)
+	for rows.Next() {
+		var status model.PullRequestStatus
+		var count int
+		err := rows.Scan(&status, &count)
+		if err != nil {
+			return nil, err
+		}
+		counts[string(status)] = count
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return counts, nil
 }
