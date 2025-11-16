@@ -12,10 +12,10 @@ import (
 )
 
 type PullRequestRepositoryPgx struct {
-	database database.Database
+	database *database.Database
 }
 
-func NewPullRequestRepositoryPgx(database database.Database) repository.PullRequestRepository {
+func NewPullRequestRepositoryPgx(database *database.Database) repository.PullRequestRepository {
 	return &PullRequestRepositoryPgx{database: database}
 }
 

@@ -11,10 +11,10 @@ import (
 )
 
 type UserRepositoryPgx struct {
-	database database.Database
+	database *database.Database
 }
 
-func NewUserRepository(database database.Database) repository.UserRepository {
+func NewUserRepository(database *database.Database) repository.UserRepository {
 	return &UserRepositoryPgx{database: database}
 }
 

@@ -12,10 +12,10 @@ import (
 )
 
 type TeamRepositoryPgx struct {
-	database database.Database
+	database *database.Database
 }
 
-func NewTeamRepository(database database.Database) repository.TeamRepository {
+func NewTeamRepository(database *database.Database) repository.TeamRepository {
 	return &TeamRepositoryPgx{database: database}
 }
 

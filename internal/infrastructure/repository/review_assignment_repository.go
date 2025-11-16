@@ -12,11 +12,11 @@ import (
 )
 
 type ReviewAssignmentRepository struct {
-	database database.Database
+	database *database.Database
 }
 
-func NewReviewAssignmentRepository(database database.Database) repository.ReviewAssignmentRepository {
-	return &ReviewAssignmentRepository{database: database}
+func NewReviewAssignmentRepository(database *database.Database) repository.ReviewAssignmentRepository {
+	return &ReviewAssignmentRepository{database: *database}
 }
 
 func (r *ReviewAssignmentRepository) AssignReviewer(
