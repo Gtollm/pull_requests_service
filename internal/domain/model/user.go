@@ -12,6 +12,6 @@ type User struct {
 	Username  string    `db:"username"`
 	TeamID    uuid.UUID `db:"team_id"`
 	IsActive  bool      `db:"is_active"`
-	createdAt time.Time `db:"created_at"`
-	updatedAt time.Time `db:"updated_at"`
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
 }
