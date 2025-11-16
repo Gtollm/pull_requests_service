@@ -16,7 +16,7 @@ func NewZerologLogger() Logger {
 
 func attachFields(e *zerolog.Event, fields ...Field) *zerolog.Event {
 	for _, v := range fields {
-		*e = *e.Interface(v.key, v.valuee)
+		*e = *e.Interface(v.key, v.value)
 	}
 	return e
 }
@@ -44,7 +44,7 @@ func (z *ZerologLogger) Error(err error, msg string, fields ...Field) {
 func (z *ZerologLogger) With(fields ...Field) Logger {
 	ctx := z.logger.With()
 	for _, v := range fields {
-		ctx = ctx.Interface(v.key, v.valuee)
+		ctx = ctx.Interface(v.key, v.value)
 	}
 
 	return &ZerologLogger{ctx.Logger()}
