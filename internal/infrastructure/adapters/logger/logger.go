@@ -1,12 +1,15 @@
 package logger
 
-type Fields map[string]interface{}
+type Field struct {
+	key    string
+	valuee interface{}
+}
 
 type Logger interface {
-	Info(msg string, fields Fields)
-	Debug(msg string, fields Fields)
-	Warn(msg string, fields Fields)
-	Error(err error, msg string, fields Fields)
+	Info(msg string, fields ...Field)
+	Debug(msg string, fields ...Field)
+	Warn(msg string, fields ...Field)
+	Error(err error, msg string, fields ...Field)
 
-	With(fields Fields) Logger
+	With(fields ...Field) Logger
 }

@@ -14,37 +14,37 @@ func NewZerologLogger() Logger {
 	return &ZerologLogger{logger}
 }
 
-func attachFields(e *zerolog.Event, fields Fields) *zerolog.Event {
-	for k, v := range fields {
-		*e = *e.Interface(k, v)
+func attachFields(e *zerolog.Event, fields ...Field) *zerolog.Event {
+	for _, v := range fields {
+		*e = *e.Interface(v.key, v.valuee)
 	}
 	return e
 }
 
-func (z *ZerologLogger) Info(msg string, fields Fields) {
+func (z *ZerologLogger) Info(msg string, fields ...Field) {
 	e := z.logger.Info()
-	attachFields(e, fields).Msg(msg)
+	attachFields(e, fields...).Msg(msg)
 }
 
-func (z *ZerologLogger) Debug(msg string, fields Fields) {
+func (z *ZerologLogger) Debug(msg string, fields ...Field) {
 	e := z.logger.Debug()
-	attachFields(e, fields).Msg(msg)
+	attachFields(e, fields...).Msg(msg)
 }
 
-func (z *ZerologLogger) Warn(msg string, fields Fields) {
+func (z *ZerologLogger) Warn(msg string, fields ...Field) {
 	e := z.logger.Warn()
-	attachFields(e, fields).Msg(msg)
+	attachFields(e, fields...).Msg(msg)
 }
 
-func (z *ZerologLogger) Error(err error, msg string, fields Fields) {
+func (z *ZerologLogger) Error(err error, msg string, fields ...Field) {
 	e := z.logger.Error().Err(err)
-	attachFields(e, fields).Msg(msg)
+	attachFields(e, fields...).Msg(msg)
 }
 
-func (z *ZerologLogger) With(fields Fields) Logger {
+func (z *ZerologLogger) With(fields ...Field) Logger {
 	ctx := z.logger.With()
-	for k, v := range fields {
-		ctx = ctx.Interface(k, v)
+	for _, v := range fields {
+		ctx = ctx.Interface(v.key, v.valuee)
 	}
 
 	return &ZerologLogger{ctx.Logger()}
