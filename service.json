@@ -1,0 +1,20 @@
+{
+  "server": {
+    "port": "8080",
+    "shutdown_timeout": "30s",
+    "request_timeout": "5s",
+    "read_timeout": "15s",
+    "write_timeout": "15s",
+    "idle_timeout": "60s"
+  },
+  "database": {
+    "max_conns": 20,
+    "min_conns": 5,
+    "max_conn_lifetime": "1h",
+    "max_conn_idle_time": "30m",
+    "health_check_period": "1m"
+  },
+  "service": {
+    "max_reviewers_count": 2
+  }
+}
