@@ -12,5 +12,7 @@ type UserRepository interface {
 	GetByID(ctx context.Context, ID model.UserID) (*model.User, error)
 	GetByTeam(ctx context.Context, teamID model.TeamID) ([]model.User, error)
 	Exists(ctx context.Context, ID model.UserID) (bool, error)
-	GetActiveByTeamExcluding(ctx context.Context, teamID model.TeamID) ([]model.User, error)
+	GetActiveByTeamExcluding(ctx context.Context, teamID model.TeamID, excludedUserIDs []model.UserID) (
+		[]model.User, error,
+	)
 }

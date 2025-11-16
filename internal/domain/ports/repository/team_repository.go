@@ -8,6 +8,6 @@ import (
 type TeamRepository interface {
 	Create(ctx context.Context, team *model.Team) error
 	Update(ctx context.Context, team *model.Team) error
-	GetByID(ctx context.Context, ID model.TeamID) error
+	GetByID(ctx context.Context, ID model.TeamID) (*model.Team, error)
 	Exists(ctx context.Context, ID model.TeamID) (bool, error)
 }

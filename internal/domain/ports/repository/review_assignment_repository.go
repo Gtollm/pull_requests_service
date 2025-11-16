@@ -11,5 +11,7 @@ type ReviewAssignmentRepository interface {
 	GetByReviewer(ctx context.Context, pullRequestID model.PullRequestID) ([]model.PullRequest, error)
 	Exists(ctx context.Context, pullRequestID model.PullRequestID, reviewerID model.UserID) (bool, error)
 	GetReviewers(ctx context.Context, pullRequestID model.PullRequestID) ([]model.User, error)
-	ReplaceReviewer(ctx context.Context, pullRequest model.PullRequestID, reviewerID model.UserID) error
+	ReplaceReviewer(
+		ctx context.Context, pullRequestID model.PullRequestID, oldReviewerID model.UserID, newReviewerID model.UserID,
+	) error
 }
