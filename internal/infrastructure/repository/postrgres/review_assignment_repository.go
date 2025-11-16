@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"pr-review-service/internal/domain/model"
-	"pr-review-service/internal/domain/ports/repository"
-	"pr-review-service/internal/domain/rules"
+	"pull-request-review/internal/domain/model"
+	"pull-request-review/internal/domain/ports/repository"
+	"pull-request-review/internal/domain/rules"
 	"time"
 )
 

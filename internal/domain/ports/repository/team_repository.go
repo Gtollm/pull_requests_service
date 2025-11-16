@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"pr-review-service/internal/domain/model"
+	"pull-request-review/internal/domain/model"
 )
 
 type TeamRepository interface {
