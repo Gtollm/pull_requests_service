@@ -5,8 +5,10 @@ import (
 	"time"
 )
 
+type TeamID uuid.UUID
+
 type Team struct {
-	TeamID    uuid.UUID `db:"id"`
+	TeamID    TeamID    `db:"id"`
 	Name      string    `db:"name"`
 	CreatedAt time.Time `db:"created_at"`
 }

@@ -5,8 +5,10 @@ import (
 	"time"
 )
 
+type UserID uuid.UUID
+
 type User struct {
-	ID        uuid.UUID `db:"user_id"`
+	ID        UserID    `db:"user_id"`
 	Username  string    `db:"username"`
 	TeamID    uuid.UUID `db:"team_id"`
 	IsActive  bool      `db:"is_active"`

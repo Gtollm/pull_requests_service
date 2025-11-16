@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+type PullRequestID uuid.UUID
 type PullRequestStatus string
 
 const (
@@ -13,9 +14,9 @@ const (
 )
 
 type PullRequest struct {
-	PullRequestID uuid.UUID         `db:"pull_request_id"`
+	PullRequestID PullRequestID     `db:"pull_request_id"`
 	Name          string            `db:"name"`
-	AuthorID      uuid.UUID         `db:"author_id"`
+	AuthorID      UserID            `db:"author_id"`
 	Status        PullRequestStatus `db:"status"`
 	CreatedAt     time.Time         `db:"created_at"`
 	MergedAt      time.Time         `db:"merged_at"`

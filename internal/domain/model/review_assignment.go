@@ -5,8 +5,10 @@ import (
 	"time"
 )
 
+type ReviewAssignmentID uuid.UUID
+
 type ReviewAssignment struct {
-	ID         uuid.UUID `db:"id"`
-	ReviewerID uuid.UUID `db:"reviewer_id"`
-	AssignedAt time.Time `db:"assigned_at"`
+	ID         ReviewAssignmentID `db:"id"`
+	ReviewerID UserID             `db:"reviewer_id"`
+	AssignedAt time.Time          `db:"assigned_at"`
 }
