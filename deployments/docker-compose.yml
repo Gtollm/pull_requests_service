@@ -1,0 +1,54 @@
+services:
+  database:
+    image: "postgres:latest"
+    container_name: pull_requests-reviewer-postgres
+    restart: always
+    ports:
+      - 5432:5432
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pull_requests-reviewer-network
+
+  migrate:
+    image: migrate/migrate
+    container_name: pull_requests-reviewer-migrate
+    volumes:
+      - ./migrations:/migrations
+    command: [
+      "-path", "/migrations",
+      "-database", "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable",
+      "up"
+    ]
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - pull_requests-reviewer-network
+    restart: on-failure
+
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    ports:
+      - 8888:80
+    env_file:
+      - .env
+    depends_on:
+      - database
+    volumes:
+      - ${PWD}/db/pgadmin-data/:/var/lib/pgadmin/
+
+volumes:
+  postgres_data:
+    driver: local
+networks:
+  pull_requests-reviewer-network:
+    driver: bridge
