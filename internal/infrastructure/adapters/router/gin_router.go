@@ -12,12 +12,11 @@ type GinRouter struct {
 
 func NewGinRouter() *GinRouter {
 	g := gin.New()
-	g.Use(gin.Recovery(), gin.Logger())
 	return &GinRouter{g, nil}
 }
 
 func (r *GinRouter) activeGroup() *gin.RouterGroup {
-	if r.group == nil {
+	if r.group != nil {
 		return r.group
 	}
 	return &r.engine.RouterGroup
