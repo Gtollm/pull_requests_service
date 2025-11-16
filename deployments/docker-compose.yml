@@ -44,7 +44,7 @@ services:
     depends_on:
       - database
     volumes:
-      - ${PWD}/db/pgadmin-data/:/var/lib/pgadmin/
+      - ${PWD}../db/pgadmin-data/:/var/lib/pgadmin/
 
 volumes:
   postgres_data:

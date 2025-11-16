@@ -20,3 +20,12 @@ go.work.sum
 
 # env file
 .env
+
+# Mac Os system file
+.DS_Store
+
+# JetBrains files
+.idea/
+
+# pgAdmin files
+pgadmin-data/
