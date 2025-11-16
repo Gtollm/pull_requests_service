@@ -21,10 +21,10 @@ services:
     image: migrate/migrate
     container_name: pull_requests-reviewer-migrate
     volumes:
-      - ./migrations:/migrations
+      - ../db/migrations:/migrations
     command: [
       "-path", "/migrations",
-      "-database", "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable",
+      "-database", "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?sslmode=disable",
       "up"
     ]
     depends_on:
@@ -45,6 +45,36 @@ services:
       - database
     volumes:
       - ${PWD}../db/pgadmin-data/:/var/lib/pgadmin/
+    networks:
+      - pull_requests-reviewer-network
+
+  app:
+    build:
+      context: ../
+      dockerfile: deployments/Dockerfile
+    container_name: pull_requests-reviewer-app
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?sslmode=disable
+      PORT: 8080
+      LOG_LEVEL: info
+      REQUEST_TIMEOUT: 5
+      SHUTDOWN_TIMEOUT: 30
+    depends_on:
+      database:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - pull_requests-reviewer-network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
