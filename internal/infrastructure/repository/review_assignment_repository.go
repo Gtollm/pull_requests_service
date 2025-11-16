@@ -16,7 +16,7 @@ type ReviewAssignmentRepository struct {
 }
 
 func NewReviewAssignmentRepository(database *database.Database) repository.ReviewAssignmentRepository {
-	return &ReviewAssignmentRepository{database: *database}
+	return &ReviewAssignmentRepository{database: database}
 }
 
 func (r *ReviewAssignmentRepository) AssignReviewer(
