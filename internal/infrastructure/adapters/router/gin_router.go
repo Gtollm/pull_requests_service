@@ -11,6 +11,7 @@ type GinRouter struct {
 }
 
 func NewGinRouter() *GinRouter {
+	gin.SetMode(gin.ReleaseMode)
 	g := gin.New()
 	return &GinRouter{g, nil}
 }
