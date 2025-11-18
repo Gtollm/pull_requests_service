@@ -65,7 +65,7 @@ func loadFromJSON(filepath string) (*Config, error) {
 func loadFromEnv(cfg *Config) error {
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
-		return fmt.Errorf("DATABASE_URL environment variable is required")
+		databaseURL = "postgres://username:password@localhost:5432/pull_requests_reviewer?sslmode=disable"
 	}
 	cfg.Database.URL = databaseURL
 
