@@ -5,12 +5,14 @@ services:
     restart: always
     ports:
       - 5432:5432
-    env_file:
-      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-username}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-pull_requests_reviewer}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-username} -d ${POSTGRES_DB:-pull_requests_reviewer}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -21,10 +23,10 @@ services:
     image: migrate/migrate
     container_name: pull_requests-reviewer-migrate
     volumes:
-      - ../db/migrations:/migrations
+      - ${PWD}/db/migrations:/migrations
     command: [
       "-path", "/migrations",
-      "-database", "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?sslmode=disable",
+      "-database", "postgres://${POSTGRES_USER:-username}:${POSTGRES_PASSWORD:-password}@database:5432/${POSTGRES_DB:-pull_requests_reviewer}?sslmode=disable",
       "up"
     ]
     depends_on:
@@ -34,29 +36,15 @@ services:
       - pull_requests-reviewer-network
     restart: on-failure
 
-  pgadmin:
-    image: dpage/pgadmin4
-    restart: always
-    ports:
-      - 8888:80
-    env_file:
-      - .env
-    depends_on:
-      - database
-    volumes:
-      - ${PWD}../db/pgadmin-data/:/var/lib/pgadmin/
-    networks:
-      - pull_requests-reviewer-network
-
   app:
     build:
-      context: ../
-      dockerfile: deployments/Dockerfile
+      context: ./
+      dockerfile: Dockerfile
     container_name: pull_requests-reviewer-app
     ports:
       - "8080:8080"
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?sslmode=disable
+      DATABASE_URL: postgres://${POSTGRES_USER:-username}:${POSTGRES_PASSWORD:-password}@database:5432/${POSTGRES_DB:-pull_requests_reviewer}?sslmode=disable
       PORT: 8080
       LOG_LEVEL: info
       REQUEST_TIMEOUT: 5
@@ -67,7 +55,7 @@ services:
       migrate:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://localhost:8080/health"]
       interval: 10s
       timeout: 5s
       retries: 3

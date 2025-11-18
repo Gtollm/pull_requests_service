@@ -1,0 +1,32 @@
+BINARY_NAME=pull_requests_reviewer
+CMD_PATH=./cmd/api
+DOCKER_IMAGE=pull_requests_reviewer
+DOCKER_COMPOSE_PATH=./
+DOCKERFILE_PATH=./Dockerfile
+
+.PHONY: help run build clean test test-integration test-e2e test-coverage docker-build docker-up docker-down docker-logs migrate-up migrate-down
+
+run:
+	go run $(CMD_PATH)
+
+build:
+	go build -o $(BINARY_NAME) $(CMD_PATH)
+
+clean:
+	rm -f $(BINARY_NAME)
+	go clean
+
+test:
+	go test ./... -v
+
+test-e2e:
+	go test ./test/e2e/... -v
+
+docker-build:
+	docker build -f $(DOCKERFILE_PATH) -t $(DOCKER_IMAGE) .
+
+docker-up:
+	cd $(DOCKER_COMPOSE_PATH) && docker-compose up --build -d
+
+docker-down:
+	cd $(DOCKER_COMPOSE_PATH) && docker-compose down
